@@ -2,11 +2,12 @@
 
 namespace Mvdstam\PhpJwtMiddleware\Services;
 
-use Exception;
 use Lcobucci\JWT\Parser;
 use Mvdstam\PhpJwtMiddleware\Contracts\JwtProviderInterface;
+use Mvdstam\PhpJwtMiddleware\Exceptions\JwtBadSyntaxException;
 use Mvdstam\PhpJwtMiddleware\Exceptions\JwtProviderException;
 use Psr\Http\Message\RequestInterface;
+use Throwable;
 
 /**
  * Class JwtProviderService
@@ -24,7 +25,11 @@ class JwtProvider implements JwtProviderInterface
 
         foreach($request->getHeader('Authorization') as $authorizationHeader) {
             if (preg_match('/^Bearer (.+)$/', $authorizationHeader, $matches)) {
-                return (new Parser)->parse($matches[1]);
+                try {
+                    return (new Parser)->parse($matches[1]);
+                } catch (Throwable $e) {
+                    throw new JwtBadSyntaxException('Could not parse JWT', 0, $e);
+                }
             }
         }
 

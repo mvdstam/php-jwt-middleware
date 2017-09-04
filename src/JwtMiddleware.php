@@ -7,12 +7,11 @@ use Mvdstam\PhpJwtMiddleware\Contracts\JwtVerificationServiceInterface;
 use Mvdstam\PhpJwtMiddleware\Events\JwtErrorEvent;
 use Mvdstam\PhpJwtMiddleware\Events\JwtInvalidEvent;
 use Mvdstam\PhpJwtMiddleware\Events\JwtValidEvent;
+use Mvdstam\PhpJwtMiddleware\Exceptions\JwtBadSyntaxException;
 use Mvdstam\PhpJwtMiddleware\Exceptions\JwtBaseException;
-use Mvdstam\PhpJwtMiddleware\Services\JwtProvider;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\EventDispatcher\Event;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Throwable;
 
@@ -67,6 +66,10 @@ class JwtMiddleware
             $jwt = $this->jwtProvider->getFromRequest($request);
             $this->jwtVerificationService->verify($jwt);
             $this->dispatchEvent(JwtValidEvent::NAME, new JwtValidEvent($jwt));
+        } catch (JwtBadSyntaxException $e) {
+            $this->dispatchEvent(JwtInvalidEvent::NAME, new JwtInvalidEvent($e));
+
+            return $response->withStatus(400);
         } catch (JwtBaseException $e) {
             $this->dispatchEvent(JwtInvalidEvent::NAME, new JwtInvalidEvent($e));
 
